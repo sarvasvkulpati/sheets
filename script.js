@@ -37,6 +37,7 @@ function onInputChange() {
 
       cellObject.formula = content
       cellObject.content = result
+      renderDataInCell(row, col, result)
 
       for (dependency of dependencies) {
         let [dependencyRow, dependencyCol] = cellIdToIndexes(dependency)
@@ -49,10 +50,16 @@ function onInputChange() {
         getCellAt(dependencyRow, dependencyCol).dependencyOf.push(cellIndexesToId(row, col))
       }
 
+
+
     } else {
       cellObject.isFormula = false
       cellObject.content = content
+
+      renderDataInCell(row, col, content)
     }
+
+
 
     data.push(cellObject)
 
@@ -69,6 +76,7 @@ function onInputChange() {
 
       existingCell.formula = content
       existingCell.content = result
+      renderDataInCell(row, col, result)
 
       for (dependency of dependencies) {
         let [dependencyRow, dependencyCol] = cellIdToIndexes(dependency)
@@ -78,10 +86,15 @@ function onInputChange() {
         getCellAt(dependencyRow, dependencyCol).dependencyOf.push(cellIndexesToId(row, col))
       }
 
+
+   
+
     } else {
       existingCell.isFormula = false
       existingCell.content = content
+      renderDataInCell(row, col, content)
     }
+    
   }
 
 
@@ -107,6 +120,8 @@ function onInputChange() {
 
       cellToUpdate.content = parseFormula(formula)[0]
 
+      renderDataInCell(...cellIdToIndexes(cellId), parseFormula(formula)[0]  )
+
     }) 
   }
 
@@ -120,6 +135,14 @@ function onInputChange() {
 }
 
 
+let renderDataInCell = (row, col, content) => {
+
+  let cell = document.querySelectorAll(`[data-row-num="${row}"][data-col-num="${col}"]`)[0]
+
+  
+  cell.childNodes[1].innerHTML = content
+}
+
 let cellIdToIndexes = (id) => {
 
   rowLetter = id[0]
@@ -132,12 +155,12 @@ let cellIdToIndexes = (id) => {
 
 let cellIndexesToId = (row, col) => {
 
-  console.log(row, col)
+  
 
   rowLetter = String.fromCharCode(65 + Number(row))
   col = Number(col) + 1
 
-  console.log(rowLetter, col)
+
 
   return rowLetter+col
 }
@@ -178,13 +201,6 @@ function parseFormula(content) {
   return [vals.reduce(op), exp]
 }
 
-// parseFormula('=(+ 1 1)')
-
-
-
-// function execute() {
-//   console.log(parseFormula('=(+ A1 B1)'))
-// }
 
 
 
@@ -192,4 +208,4 @@ function parseFormula(content) {
 
 // need to change (add new, removed deleted cell ids) dependencies if formula is changed
 
-// need to add a 
+// need to prevent cells referring to themselves (put the a in the acyclic graphs)
