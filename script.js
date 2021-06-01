@@ -5,6 +5,27 @@ let ops = {
 
 }
 
+
+class Cell {
+
+  constructor(row, col, content = '', dependencyOf = [], isFormula = false) {
+    this.row = row
+    this.col = col
+    this.content = content
+    this.dependencyOf = dependencyOf
+    this.isFormula = isFormula
+  }
+
+  render() {
+    let cell = document.querySelectorAll(`[data-row-num="${this.row}"][data-col-num="${this.col}"]`)[0]
+
+
+    cell.childNodes[1].innerHTML = this.content
+  }
+}
+
+
+
 function onInputChange() {
 
   let row = event.target.parentNode.getAttribute('data-row-num')
@@ -14,134 +35,83 @@ function onInputChange() {
 
 
 
-  //if cell doesn't exist, make one from scratch
+  //create a cell
+  let isFormula = (content[0] == '=')
+  let cell = new Cell(row, col, isFormula = isFormula)
 
 
-  let existingCell = data.find((cell) => cell.row == row && cell.col == col)
-  if (!existingCell) {
+  if (isFormula) {
 
-    let cellObject = {}
+    let [result, dependencies] = parseFormula(content)
+    cell.formula = content
+    cell.content = result
+    cell.render()
 
-    cellObject.row = row
-    cellObject.col = col
-    cellObject.dependencyOf = []
-
-
-    if (content[0] == '=') {
-      cellObject.isFormula = true
-
-
-      let [result, dependencies] = parseFormula(content)
-
-      
-
-      cellObject.formula = content
-      cellObject.content = result
-      renderDataInCell(row, col, result)
-
-      for (dependency of dependencies) {
-        let [dependencyRow, dependencyCol] = cellIdToIndexes(dependency)
-
-
-    
-
-      
-
-        getCellAt(dependencyRow, dependencyCol).dependencyOf.push(cellIndexesToId(row, col))
-      }
-
-
-
-    } else {
-      cellObject.isFormula = false
-      cellObject.content = content
-
-      renderDataInCell(row, col, content)
+    //need to fix this to remove unused dependencies
+    for (dependency of dependencies) {
+      let [dependencyRow, dependencyCol] = cellIdToIndexes(dependency)
+      getCellAt(dependencyRow, dependencyCol).dependencyOf.push(cellIndexesToId(row, col))
     }
 
 
-
-    data.push(cellObject)
-
-  //otherwise, update the existing cell 
   } else {
-
-    if (content[0] == '=') {
-      existingCell.isFormula = true
-
-
-      let [result, dependencies] = parseFormula(content)
-
-      
-
-      existingCell.formula = content
-      existingCell.content = result
-      renderDataInCell(row, col, result)
-
-      for (dependency of dependencies) {
-        let [dependencyRow, dependencyCol] = cellIdToIndexes(dependency)
-
-
-
-        getCellAt(dependencyRow, dependencyCol).dependencyOf.push(cellIndexesToId(row, col))
-      }
-
-
-   
-
-    } else {
-      existingCell.isFormula = false
-      existingCell.content = content
-      renderDataInCell(row, col, content)
-    }
-    
+    cell.content = content
+    cell.render()
   }
 
 
 
-  // if (data.find((cell) => cell.row == row && cell.col == col)) {
-  //   data.find((cell) => cell.row == row && cell.col == col).content = content
-  // } else {
-  //   data.push(cellObject)
-  // }
+
+  //replace or push cell
+  let existingCell = data.find((cell) => cell.row == row && cell.col == col)
+
+  if (existingCell) {
+
+    if (cell.isFormula){
+      existingCell.formula = cell.content
+      existingCell.content = cell.result
+    } else {
+      existingCell.content = cell.content
+    }
+
+  } else {
+    data.push(cell)
+  }
+
+  console.log(data)
 
 
-  //update dependencies
+
+
+  //need to create a function that recursively gets all dependencies in a list and then updates them
+
 
   let thisCell = data.find((cell) => cell.row == row && cell.col == col)
 
-  if (thisCell?.dependencyOf) {
+  if (thisCell ?.dependencyOf) {
     thisCell.dependencyOf.forEach((cellId) => {
-      
-      
+
+
       let cellToUpdate = getCellAt(...cellIdToIndexes(cellId))
-     
+
       let formula = cellToUpdate.formula
 
       cellToUpdate.content = parseFormula(formula)[0]
 
-      renderDataInCell(...cellIdToIndexes(cellId), parseFormula(formula)[0]  )
+      renderDataInCell(...cellIdToIndexes(cellId), parseFormula(formula)[0])
 
-    }) 
+    })
   }
 
-
-
-
-  console.log('data', data)
-
-
-
 }
 
-
-let renderDataInCell = (row, col, content) => {
-
+let renderDataInCell = (row, col, content)=> {
   let cell = document.querySelectorAll(`[data-row-num="${row}"][data-col-num="${col}"]`)[0]
 
-  
-  cell.childNodes[1].innerHTML = content
+
+    cell.childNodes[1].innerHTML = content
 }
+
 
 let cellIdToIndexes = (id) => {
 
@@ -155,14 +125,14 @@ let cellIdToIndexes = (id) => {
 
 let cellIndexesToId = (row, col) => {
 
-  
+
 
   rowLetter = String.fromCharCode(65 + Number(row))
   col = Number(col) + 1
 
 
 
-  return rowLetter+col
+  return rowLetter + col
 }
 
 let getCellAt = (row, col) => {
@@ -192,7 +162,7 @@ function parseFormula(content) {
 
   let vals = exp.map((val) => getCellAt(...cellIdToIndexes(val)).content)
 
-  
+
 
 
 
