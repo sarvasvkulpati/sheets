@@ -36,6 +36,16 @@ class Cell {
     return rowLetter + colNum
   }
 
+  static idToIndexes(id) {
+
+    let rowLetter = id[0]
+    let row = rowLetter.charCodeAt(0) - 65
+
+    let col = id[1] - 1
+
+    return [row, col]
+  }
+
   getDependentCells() {
     // console.log('dependent', this.dependencyOf)
 
@@ -240,43 +250,43 @@ let getCellAt = (row, col) => {
 }
 
 
-function parseFormula(content) {
+// function parseFormula(content) {
 
 
 
 
-  let tokens = content.replace('(', ' ( ').replace(')', ' ) ').split(' ')
+//   let tokens = content.replace('(', ' ( ').replace(')', ' ) ').split(' ')
 
-  tokens.shift()
+//   tokens.shift()
 
-  if (tokens[0] = '(') {
-    tokens.shift()
+//   if (tokens[0] = '(') {
+//     tokens.shift()
 
-    exp = []
-    while (tokens[0] != ')' && tokens[0]) {
-      exp.push(tokens.shift())
-    }
-  }
+//     exp = []
+//     while (tokens[0] != ')' && tokens[0]) {
+//       exp.push(tokens.shift())
+//     }
+//   }
 
 
-  let op = ops[exp.shift()]
-  let vals
+//   let op = ops[exp.shift()]
+//   let vals
 
-  try {
-    vals = exp.map((val) => getCellAt(...cellIdToIndexes(val)).content)
-  } catch {
-    vals = ['']
-  }
-  
-
+//   try {
+//     vals = exp.map((val) => getCellAt(...cellIdToIndexes(val)).content)
+//   } catch {
+//     vals = ['']
+//   }
 
 
 
 
 
 
-  return [vals.reduce(op), exp]
-}
+
+
+//   return [vals.reduce(op), exp]
+// }
 
 
 
@@ -286,3 +296,88 @@ function parseFormula(content) {
 // need to change (add new, removed deleted cell ids) dependencies if formula is changed
 
 // need to prevent cells referring to themselves (put the a in the acyclic graphs)
+
+
+
+function parseFormula(content) {
+ 
+
+
+  let tokens = content.replaceAll('(', ' ( ').replaceAll(')', ' ) ').split(/  */)
+
+  tokens.shift() //get rid of the =
+
+  
+
+
+
+  let tokens_to_ast = (tokens) => {
+
+    let token = tokens.shift()
+
+    if (token == '(') {
+      let ast = []
+
+      while (tokens[0] != ')') {
+        ast.push(tokens_to_ast(tokens))
+      }
+      tokens.shift() //get rid of )
+      return ast
+
+    } else if (token == ')') {
+      throw "there shouldn't be a ) here"
+    } else {
+      return token
+    }
+  }
+
+
+
+
+  let ast = tokens_to_ast(tokens)
+  console.log(ast)
+  
+  let dependencies = []
+
+  let eval = (x) => {
+
+
+    // console.log('evaluating', x)
+
+    // if it's a cellId
+    if (typeof(x) == 'string' && x.match(/[A-Z][0-9]/)) {
+      console.log('nan', x)
+
+      dependencies.push(x)
+
+      return getCellAt(Cell.idToIndexes(x))
+
+    }
+    // it's a number
+    else if (Number(x)) {
+
+      console.log('number', x)
+      
+      return x
+    } 
+     
+    else if (typeof(x) == 'string' && ops[x]) {
+      return ops[x]
+    }
+
+    // it's a procedure
+
+    else {
+      // console.log('proc')
+      let proc = eval(x[0])
+      let args = x.slice(1).map((arg) => eval(arg))
+
+      return args.reduce(proc)
+    }
+  }
+
+
+  console.log('evaluated value ', eval(ast), dependencies)
+}
+
+parseFormula('=(+ 1 (+ 1 4))')
