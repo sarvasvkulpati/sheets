@@ -78,7 +78,7 @@ function onInputChange() {
   let col = event.target.parentNode.getAttribute('data-col-num')
   let content = event.target.value
 
-
+  
 
 
   //create a cell
@@ -89,14 +89,27 @@ function onInputChange() {
   if (isFormula) {
 
     let [result, dependencies] = parseFormula(content)
+
+    console.log(result, dependencies)
     cell.formula = content
     cell.content = result
+
+    console.log('1-', cell.content)
     cell.render()
 
     //need to fix this to remove unused dependencies
     for (dependency of dependencies) {
       let [dependencyRow, dependencyCol] = cellIdToIndexes(dependency)
-      getCellAt(dependencyRow, dependencyCol).dependencyOf.push(Cell.indexesToId(row, col))
+
+      let dependencyCell = getCellAt(dependencyRow, dependencyCol)
+
+      let id = Cell.indexesToId(row, col)
+
+      if(dependencyCell.dependencyOf.indexOf(id) == -1) {
+        dependencyCell.dependencyOf.push(id)
+      }
+
+      
     }
 
 
@@ -114,13 +127,49 @@ function onInputChange() {
   if (existingCell) {
 
 
-    if (cell.isFormula) {
-      existingCell.formula = cell.content
-      existingCell.content = cell.result
-      // existingCell.dependencyOf = cell.dependencyOf
+    if (isFormula) {
+
+      
+
+      //find id of dropped cells
+
+      let [_, newDependencies] = parseFormula(cell.formula)
+      let [__, prevDependencies] = parseFormula(existingCell.formula)
+
+
+      let droppedDependencyIds = prevDependencies.filter((dependency, idx) => {
+
+        if (dependency != newDependencies[idx]) {
+          return dependency
+        } 
+      })
+
+      
+      
+
+      //remove id from dropped cells
+
+      droppedDependencyIds.forEach((id) => {
+        let updateCell = data.find((cell) => cell.id == id)
+
+       
+
+        updateCell.dependencyOf = updateCell.dependencyOf.filter(cellId => cellId != Cell.indexesToId(row, col))
+      })
+
+      
+
+
+
+
+
+      existingCell.formula = cell.formula
+      existingCell.content = cell.content
+      existingCell.render()
+      
     } else {
       existingCell.content = cell.content
-      // existingCell.dependencyOf = cell.dependencyOf
+      
     }
 
   } else {
@@ -135,11 +184,13 @@ function onInputChange() {
 
 
 
-  //need to create a function that recursively gets all dependencies in a list and then updates them
+  
 
 
+
+  //it's either the cell object we created or an existing cell. I just re-find the cell to get whichever one it was
   let thisCell = data.find((cell) => cell.row == row && cell.col == col)
-  console.log('\n dependencies of', thisCell.id, thisCell.getDependentCells())
+
 
 
   let dependencies = thisCell.getDependentCells()
@@ -182,6 +233,7 @@ let getCellAt = (row, col) => {
 
 function parseFormula(content) {
 
+  
 
 
   let tokens = content.replace('(', ' ( ').replace(')', ' ) ').split(' ')
