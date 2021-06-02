@@ -253,7 +253,7 @@ function parseFormula(content) {
     tokens.shift()
 
     exp = []
-    while (tokens[0] != ')') {
+    while (tokens[0] != ')' && tokens[0]) {
       exp.push(tokens.shift())
     }
   }
