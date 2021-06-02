@@ -2,7 +2,7 @@ let data = []
 
 let ops = {
   '+': (op1, op2) => Number(op1) + Number(op2)
-
+  
 }
 
 
@@ -293,11 +293,6 @@ let getCellAt = (row, col) => {
 
 
 
-// need to change (add new, removed deleted cell ids) dependencies if formula is changed
-
-// need to prevent cells referring to themselves (put the a in the acyclic graphs)
-
-
 
 function parseFormula(content) {
  
@@ -335,28 +330,31 @@ function parseFormula(content) {
 
 
   let ast = tokens_to_ast(tokens)
-  console.log(ast)
+  
   
   let dependencies = []
 
   let eval = (x) => {
-
+    console.log(x)
 
     // console.log('evaluating', x)
 
     // if it's a cellId
     if (typeof(x) == 'string' && x.match(/[A-Z][0-9]/)) {
-      console.log('nan', x)
+      
 
       dependencies.push(x)
+     
 
-      return getCellAt(Cell.idToIndexes(x))
+      
+
+      return getCellAt(...Cell.idToIndexes(x)).content
 
     }
     // it's a number
     else if (Number(x)) {
 
-      console.log('number', x)
+      
       
       return x
     } 
@@ -377,7 +375,11 @@ function parseFormula(content) {
   }
 
 
-  console.log('evaluated value ', eval(ast), dependencies)
+  
+
+  return [eval(ast), dependencies]
 }
 
-parseFormula('=(+ 1 (+ 1 4))')
+
+
+
