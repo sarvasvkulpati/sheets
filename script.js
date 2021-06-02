@@ -74,11 +74,12 @@ class Cell {
 
 function onInputChange() {
 
+
   let row = event.target.parentNode.getAttribute('data-row-num')
   let col = event.target.parentNode.getAttribute('data-col-num')
   let content = event.target.value
 
-  
+
 
 
   //create a cell
@@ -88,13 +89,21 @@ function onInputChange() {
 
   if (isFormula) {
 
+
     let [result, dependencies] = parseFormula(content)
 
-    console.log(result, dependencies)
+    console.log(dependencies)
+
+    if (dependencies.includes(Cell.indexesToId(row, col))) {
+      console.log("can't refer to self")
+      return
+    }
+
+
     cell.formula = content
     cell.content = result
 
-    console.log('1-', cell.content)
+
     cell.render()
 
     //need to fix this to remove unused dependencies
@@ -105,11 +114,11 @@ function onInputChange() {
 
       let id = Cell.indexesToId(row, col)
 
-      if(dependencyCell.dependencyOf.indexOf(id) == -1) {
+      if (dependencyCell.dependencyOf.indexOf(id) == -1) {
         dependencyCell.dependencyOf.push(id)
       }
 
-      
+
     }
 
 
@@ -129,7 +138,7 @@ function onInputChange() {
 
     if (isFormula) {
 
-      
+
 
       //find id of dropped cells
 
@@ -141,23 +150,23 @@ function onInputChange() {
 
         if (dependency != newDependencies[idx]) {
           return dependency
-        } 
+        }
       })
 
-      
-      
+
+
 
       //remove id from dropped cells
 
       droppedDependencyIds.forEach((id) => {
         let updateCell = data.find((cell) => cell.id == id)
 
-       
+
 
         updateCell.dependencyOf = updateCell.dependencyOf.filter(cellId => cellId != Cell.indexesToId(row, col))
       })
 
-      
+
 
 
 
@@ -166,10 +175,10 @@ function onInputChange() {
       existingCell.formula = cell.formula
       existingCell.content = cell.content
       existingCell.render()
-      
+
     } else {
       existingCell.content = cell.content
-      
+
     }
 
   } else {
@@ -184,7 +193,7 @@ function onInputChange() {
 
 
 
-  
+
 
 
 
@@ -233,7 +242,7 @@ let getCellAt = (row, col) => {
 
 function parseFormula(content) {
 
-  
+
 
 
   let tokens = content.replace('(', ' ( ').replace(')', ' ) ').split(' ')
@@ -251,8 +260,14 @@ function parseFormula(content) {
 
 
   let op = ops[exp.shift()]
+  let vals
 
-  let vals = exp.map((val) => getCellAt(...cellIdToIndexes(val)).content)
+  try {
+    vals = exp.map((val) => getCellAt(...cellIdToIndexes(val)).content)
+  } catch {
+    vals = ['']
+  }
+  
 
 
 
