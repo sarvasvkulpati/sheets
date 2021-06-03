@@ -303,13 +303,14 @@ function parseFormula(content) {
   let dependencies = []
 
   let eval = (x) => {
-    console.log(x)
+    console.log(x, Number(x))
 
     // console.log('evaluating', x)
 
     // if it's a cellId
     if (typeof(x) == 'string' && x.match(/[A-Z][0-9]/)) {
       
+       console.log('cellId', x)
 
       dependencies.push(x)
      
@@ -320,21 +321,24 @@ function parseFormula(content) {
 
     }
     // it's a number
-    else if (Number(x)) {
+    else if (!isNaN(x)) {
 
-      
+      console.log('number', x)
       
       return x
     } 
      
     else if (typeof(x) == 'string' && ops[x]) {
+
+       console.log('op', x)
+
       return ops[x]
     }
 
     // it's a procedure
 
     else {
-      // console.log('proc')
+      console.log('proc', x)
       let proc = eval(x[0])
       let args = x.slice(1).map((arg) => eval(arg))
 
@@ -349,6 +353,7 @@ function parseFormula(content) {
 }
 
 
+parseFormula('=(+ 0 1)')
 
 
 function createCells() {
