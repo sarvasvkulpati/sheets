@@ -1,9 +1,15 @@
 let data = []
 
 let ops = {
-  '+': (op1, op2) => Number(op1) + Number(op2)
-  
+  '+': (op1, op2) => Number(op1) + Number(op2),
+  '-': (op1, op2) => Number(op1) - Number(op2),
+  '/': (op1, op2) => Number(op1) / Number(op2),
+  '*': (op1, op2) => Number(op1) * Number(op2)
 }
+
+
+
+
 
 
 class Cell {
@@ -19,8 +25,9 @@ class Cell {
   render() {
     let cell = document.querySelectorAll(`[data-row-num="${this.row}"][data-col-num="${this.col}"]`)[0]
 
+    console.log(cell, cell.childNodes)
 
-    cell.childNodes[1].innerHTML = this.content
+    cell.childNodes[0].innerHTML = this.content
   }
 
 
@@ -250,45 +257,6 @@ let getCellAt = (row, col) => {
 }
 
 
-// function parseFormula(content) {
-
-
-
-
-//   let tokens = content.replace('(', ' ( ').replace(')', ' ) ').split(' ')
-
-//   tokens.shift()
-
-//   if (tokens[0] = '(') {
-//     tokens.shift()
-
-//     exp = []
-//     while (tokens[0] != ')' && tokens[0]) {
-//       exp.push(tokens.shift())
-//     }
-//   }
-
-
-//   let op = ops[exp.shift()]
-//   let vals
-
-//   try {
-//     vals = exp.map((val) => getCellAt(...cellIdToIndexes(val)).content)
-//   } catch {
-//     vals = ['']
-//   }
-
-
-
-
-
-
-
-
-//   return [vals.reduce(op), exp]
-// }
-
-
 
 
 
@@ -383,3 +351,34 @@ function parseFormula(content) {
 
 
 
+function createCells() {
+  let table = document.createElement('table')
+
+  for(let ri = 0; ri < 100; ri++) {
+
+    let tr = document.createElement('tr')
+
+    for (let ci = 0; ci < 100; ci++ ) {
+      let td = document.createElement('td')
+      td.setAttribute('data-row-num', ri)
+      td.setAttribute('data-col-num', ci)
+      let p = document.createElement('p')
+      let input = document.createElement('input')
+      input.type = 'text'
+      input.setAttribute('onchange', 'onInputChange()')
+
+      
+  
+      td.appendChild(p)
+      td.appendChild(input)
+    
+      tr.appendChild(td)
+    }
+
+    table.appendChild(tr)
+  }
+
+  document.getElementById('root').appendChild(table)
+}
+
+createCells()
