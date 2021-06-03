@@ -114,18 +114,19 @@ function onInputChange() {
 
 
 
+  let cell = getCellAt(row, col)
 
-  //create a cell
   let isFormula = (content[0] == '=')
-  let cell = new Cell(row, col, isFormula = isFormula)
+
+
+
 
 
   if (isFormula) {
 
 
-    let [result, dependencies] = parseFormula(content)
 
-    console.log(dependencies)
+    let [result, dependencies] = parseFormula(content)
 
     if (dependencies.includes(Cell.indexesToId(row, col))) {
       console.log("can't refer to self")
@@ -133,10 +134,34 @@ function onInputChange() {
     }
 
 
+
+    if (cell.formula) {
+      let [_, oldDependencies] = parseFormula(cell.formula)
+
+      let droppedDependencyIds = oldDependencies.filter((dependency, idx) => {
+        if (dependency != dependencies[idx]) {
+          return dependency
+        }
+      })
+
+      droppedDependencyIds.forEach((id) => {
+        let updateCell = data.find((cell) => cell.id == id)
+        updateCell.dependencyOf = updateCell.dependencyOf.filter(cellId => cellId != Cell.indexesToId(row, col))
+      })
+    }
+
+
+
+
+
+
+
+
+
+
+
     cell.formula = content
     cell.content = result
-
-
     cell.render()
 
     //need to fix this to remove unused dependencies
@@ -162,88 +187,13 @@ function onInputChange() {
 
 
 
-
-  //replace or push cell
-  let existingCell = data.find((cell) => cell.row == row && cell.col == col)
-
-  if (existingCell) {
-
-
-    if (isFormula) {
-
-
-
-      //find id of dropped cells
-
-      let [_, newDependencies] = parseFormula(cell.formula)
-      let [__, prevDependencies] = parseFormula(existingCell.formula)
-
-
-      let droppedDependencyIds = prevDependencies.filter((dependency, idx) => {
-
-        if (dependency != newDependencies[idx]) {
-          return dependency
-        }
-      })
-
-
-
-
-      //remove id from dropped cells
-
-      droppedDependencyIds.forEach((id) => {
-        let updateCell = data.find((cell) => cell.id == id)
-
-
-
-        updateCell.dependencyOf = updateCell.dependencyOf.filter(cellId => cellId != Cell.indexesToId(row, col))
-      })
-
-
-
-
-
-
-
-      existingCell.formula = cell.formula
-      existingCell.content = cell.content
-      existingCell.render()
-
-    } else {
-      existingCell.content = cell.content
-
-    }
-
-  } else {
-    data.push(cell)
-  }
-
-  console.log(data)
-
-
-
-
-
-
-
-
-
-
-
-  //it's either the cell object we created or an existing cell. I just re-find the cell to get whichever one it was
-  let thisCell = data.find((cell) => cell.row == row && cell.col == col)
-
-
-
-  let dependencies = thisCell.getDependentCells()
+  let dependencies = cell.getDependentCells()
 
   dependencies.forEach((dependentCellId) => {
     dependentCell = data.find((cell) => cell.id == dependentCellId)
     dependentCell.content = parseFormula(dependentCell.formula)[0]
     dependentCell.render()
   })
-
-
 
 
 
@@ -279,6 +229,8 @@ let getCellAt = (row, col) => {
 
 
 function parseFormula(content) {
+
+
 
 
 
@@ -369,7 +321,7 @@ function parseFormula(content) {
 }
 
 
-parseFormula('=(+ 0 1)')
+
 
 
 
