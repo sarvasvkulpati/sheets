@@ -14,20 +14,36 @@ let ops = {
 
 class Cell {
 
-  constructor(row, col, content = '', dependencyOf = [], isFormula = false) {
+  constructor(row, col, content = '', dependencyOf = [], isFormula = false, isSelected = false) {
     this.row = row
     this.col = col
     this.content = content
     this.dependencyOf = dependencyOf
     this.isFormula = isFormula
+    this.isSelected = isSelected
   }
 
   render() {
     let cell = document.querySelectorAll(`[data-row-num="${this.row}"][data-col-num="${this.col}"]`)[0]
 
-    console.log(cell, cell.childNodes)
+    let p = cell.childNodes[0]
+    let input = cell.childNodes[1]
 
-    cell.childNodes[0].innerHTML = this.content
+    if (this.isSelected) {
+      p.style.display = 'none'
+      input.style.display = 'block'
+      cell.style.borderColor = 'blue'
+
+      input.select()
+
+    } else {
+      p.style.display = 'block'
+      input.style.display = 'none'
+      cell.style.borderColor = '#dfdfdf';
+    }
+
+
+    p.innerHTML = this.content
   }
 
 
@@ -263,14 +279,14 @@ let getCellAt = (row, col) => {
 
 
 function parseFormula(content) {
- 
+
 
 
   let tokens = content.replaceAll('(', ' ( ').replaceAll(')', ' ) ').split(/  */)
 
   tokens.shift() //get rid of the =
 
-  
+
 
 
 
@@ -298,24 +314,24 @@ function parseFormula(content) {
 
 
   let ast = tokens_to_ast(tokens)
-  
-  
+
+
   let dependencies = []
 
   let eval = (x) => {
-    console.log(x, Number(x))
+
 
     // console.log('evaluating', x)
 
     // if it's a cellId
-    if (typeof(x) == 'string' && x.match(/[A-Z][0-9]/)) {
-      
-       console.log('cellId', x)
+    if (typeof (x) == 'string' && x.match(/[A-Z][0-9]/)) {
+
+
 
       dependencies.push(x)
-     
 
-      
+
+
 
       return getCellAt(...Cell.idToIndexes(x)).content
 
@@ -323,14 +339,14 @@ function parseFormula(content) {
     // it's a number
     else if (!isNaN(x)) {
 
-      console.log('number', x)
-      
-      return x
-    } 
-     
-    else if (typeof(x) == 'string' && ops[x]) {
 
-       console.log('op', x)
+
+      return x
+    }
+
+    else if (typeof (x) == 'string' && ops[x]) {
+
+
 
       return ops[x]
     }
@@ -338,7 +354,7 @@ function parseFormula(content) {
     // it's a procedure
 
     else {
-      console.log('proc', x)
+
       let proc = eval(x[0])
       let args = x.slice(1).map((arg) => eval(arg))
 
@@ -347,7 +363,7 @@ function parseFormula(content) {
   }
 
 
-  
+
 
   return [eval(ast), dependencies]
 }
@@ -356,28 +372,92 @@ function parseFormula(content) {
 parseFormula('=(+ 0 1)')
 
 
+
+function onCellClick() {
+
+  // console.log(event.target, event.target.nodeName)
+  let row
+  let col
+
+  if (event.target.nodeName == 'P') {
+    console.log()
+    row = event.target.parentNode.getAttribute('data-row-num')
+    col = event.target.parentNode.getAttribute('data-col-num')
+  } else {
+    row = event.target.getAttribute('data-row-num')
+    col = event.target.getAttribute('data-col-num')
+  }
+
+
+
+
+  let cell = getCellAt(row, col)
+
+
+  if (cell) {
+
+    data.filter((cell) => cell.isSelected)
+      .map((cell) => {
+        cell.isSelected = false
+        cell.render()
+      })
+
+
+
+    cell.isSelected = true
+
+
+
+    cell.render()
+  }
+
+
+}
+
+function onCellKeyPress() {
+  if (event.key == 'Enter') {
+    let row = event.target.parentNode.getAttribute('data-row-num')
+    let col = event.target.parentNode.getAttribute('data-col-num')
+
+    let cell = getCellAt(row, col)
+
+
+    if (cell) {
+      cell.isSelected = false
+      cell.render()
+    }
+
+  }
+}
+
+
+
+
 function createCells() {
   let table = document.createElement('table')
 
-  for(let ri = 0; ri < 100; ri++) {
+  for (let ri = 0; ri < 100; ri++) {
 
     let tr = document.createElement('tr')
 
-    for (let ci = 0; ci < 100; ci++ ) {
+    for (let ci = 0; ci < 100; ci++) {
       let td = document.createElement('td')
       td.setAttribute('data-row-num', ri)
       td.setAttribute('data-col-num', ci)
+      td.setAttribute('onclick', 'onCellClick()')
+      td.setAttribute('onkeypress', 'onCellKeyPress()')
       let p = document.createElement('p')
       let input = document.createElement('input')
       input.type = 'text'
       input.setAttribute('onchange', 'onInputChange()')
 
-      
-  
+
+
       td.appendChild(p)
       td.appendChild(input)
-    
+
       tr.appendChild(td)
+      data.push(new Cell(ri, ci))
     }
 
     table.appendChild(tr)
